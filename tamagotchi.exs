@@ -8,16 +8,12 @@ defmodule Game do
 
   defp listen do
     receive do
-      {:status, state, energy, stomach, hygiene} ->
-        display(state, energy, stomach, hygiene)
+      {:status, status} ->
+        IO.puts status
         listen
       {:quit} ->
         IO.puts "Game over!"
     end
-  end
-
-  defp display(state, energy, stomach, hygiene) do
-    IO.puts "Tamagotchi #{state} energy: #{energy}, stomach: #{stomach}, hygiene: #{hygiene}"
   end
 end
 
@@ -98,7 +94,9 @@ defmodule Tamagotchi do
     energy = get(agent, :energy)
     stomach = get(agent, :stomach)
     hygiene = get(agent, :hygiene)
-    send(game, {:status, state, energy, stomach, hygiene})
+
+    status = "Tamagotchi #{state} energy: #{energy}, stomach: #{stomach}, hygiene: #{hygiene}"
+    send(game, {:status, status})
   end
 
   defp get(agent, key) do
