@@ -36,13 +36,30 @@ defmodule Tamagotchi do
   defp run(game, agent) do
     receive do
       {:tick} ->
-        change(agent, :energy, -10)
+        case get(agent, :state) do
+          :awake ->
+            change(agent, :energy, -10)
+            change(agent, :stomach, -10)
+            change(agent, :hygiene, -10)
+          :asleep ->
+            change(agent, :energy, 10)
+            change(agent, :stomach, -5)
+            change(agent, :hygiene, -1)
+          _ ->
+        end
       {:feed} ->
         case get(agent, :state) do
           :awake ->
-            change(agent, :energy, 750)
+            change(agent, :stomach, 750)
           _ ->
             IO.puts "I can't eat while I'm asleep"
+        end
+      {:clean} ->
+        case get(agent, :state) do
+          :awake ->
+            set(agent, :hygiene, 1000)
+          _ ->
+            IO.puts "I can't be cleaned while I'm asleep"
         end
       {:sleep} ->
         state = get(agent, :state)
@@ -122,16 +139,32 @@ defmodule Owner do
     case command do
       "feed" ->
         send(tamagotchi, {:feed})
+      "clean" ->
+        send(tamagotchi, {:clean})
       "sleep" ->
         send(tamagotchi, {:sleep})
       "wake" ->
         send(tamagotchi, {:wake})
       "quit" ->
         send(tamagotchi, {:quit})
+      "help" ->
+        list_commands
       _ ->
         IO.puts "unrecognised command: #{command}"
     end
     run(tamagotchi)
+  end
+
+  defp list_commands do
+    IO.puts """
+    Commands:
+    * feed
+    * clean
+    * sleep
+    * wake
+    * quit
+    * help
+    """
   end
 end
 
