@@ -23,44 +23,80 @@ end
 
 defmodule Tamagotchi do
   def start(game) do
-    run(game, :awake, 1000, 1000, 1000)
+    run(game, hatch())
   end
 
-  defp run(game, state, energy, stomach, hygiene) do
-    continue = true
+  defp hatch do
+    {:ok, agent} = Agent.start_link fn ->
+      %{state: :awake, energy: 1000, stomach: 1000, hygiene: 1000}
+    end
+    agent
+  end
+
+  defp run(game, agent) do
     receive do
       {:tick} ->
-        energy = energy - 10
+        change(agent, :energy, -10)
       {:feed} ->
-        case state do
+        case get(agent, :state) do
           :awake ->
-            energy = energy + 750
+            change(agent, :energy, 750)
           _ ->
             IO.puts "I can't eat while I'm asleep"
         end
       {:sleep} ->
+        state = get(agent, :state)
         case state do
           :awake ->
-            state = :asleep
-          _ ->
+            set(agent, :state, :asleep)
+          :asleep ->
             IO.puts "I'm already asleep!"
+          _ ->
+            IO.puts "I'm #{state}"
         end
       {:wake} ->
+        state = get(agent, :state)
         case state do
           :asleep ->
-            state = :awake
-          _ ->
+            set(agent, :state, :awake)
+          :awake ->
             IO.puts "I'm already awake"
-        end
+           _ ->
+            IO.puts "I'm #{state}"
+         end
       {:quit} ->
+        set(agent, :state, :dying)
         IO.puts "Aaaargh, you killed me!"
         send(game, {:quit})
-        continue = false
     end
-    if continue do
-      send(game, {:status, state, energy, stomach, hygiene})
-      run(game, state, energy, stomach, hygiene)
+    report(game, agent)
+    state = get(agent, :state)
+    unless state == :dying do
+      run(game, agent)
     end
+  end
+
+  defp report(game, agent) do
+    state = get(agent, :state)
+    energy = get(agent, :energy)
+    stomach = get(agent, :stomach)
+    hygiene = get(agent, :hygiene)
+    send(game, {:status, state, energy, stomach, hygiene})
+  end
+
+  defp get(agent, key) do
+    Agent.get(agent, fn state -> Map.get(state, key) end)
+  end
+
+  defp set(agent, key, value) do
+    Agent.cast(agent, fn state -> Map.put(state, key, value) end)
+  end
+
+  defp change(agent, key, amount) do
+    Agent.cast(agent, fn state ->
+      val = Map.get(state, key)
+      Map.put(state, key, val + amount)
+    end)
   end
 end
 
@@ -69,7 +105,7 @@ defmodule Ticker do
     run(target)
   end
 
-  def run(target) do
+  defp run(target) do
     Enum.to_list(Stream.timer(1000))
     send(target, {:tick})
     run(target)
