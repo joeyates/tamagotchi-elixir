@@ -1,0 +1,4 @@
+Run
+```
+elixir tamagotchi.exs
+```
