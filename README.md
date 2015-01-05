@@ -2,9 +2,26 @@
 
 An implementation of a Tamagotchi 'electronic pet' in Elixir.
 
-# Run
+# Development
+
+## Run
+
 ```
 elixir tamagotchi.exs
+```
+
+# Release
+
+## Compile
+
+```
+mix escript.build
+```
+
+## Run
+
+```
+./tamagotchi
 ```
 
 # TODO
