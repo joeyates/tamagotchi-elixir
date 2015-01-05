@@ -1,4 +1,8 @@
 defmodule Game do
+  def main(args) do
+    start
+  end
+
   def start() do
     tamagotchi = spawn(Tamagotchi, :start, [self()])
     spawn(Ticker, :start, [tamagotchi])
@@ -165,5 +169,3 @@ defmodule Owner do
     """
   end
 end
-
-Game.start
